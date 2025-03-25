@@ -49,16 +49,34 @@ jobs:
       uses: peter-evans/create-pull-request@v6
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        commit-message: "chore: terraform changes from development"
-        title: "Terraform Changes Ready for Review"
+        commit-message: "feat: terraform infrastructure changes"
+        title: "Infrastructure: Terraform Changes Ready for Review"
         body: |
-          This PR contains Terraform changes that have passed validation:
-          - Format check: ${{ steps.fmt.outcome }}
-          - Init: ${{ steps.init.outcome }}
-          - Validate: ${{ steps.validate.outcome }}
+          ## Terraform Changes Summary
           
-          Please review the changes and merge to trigger HCP Terraform run.
+          This PR contains infrastructure changes that have been validated:
+          
+          ### Validation Results
+          ✨ Format check: ${{ steps.fmt.outcome }}
+          🔄 Init: ${{ steps.init.outcome }}
+          ✅ Validate: ${{ steps.validate.outcome }}
+          
+          ### Changes Include
+          - Infrastructure modifications from development branch
+          - Automated validation checks passed
+          
+          ### Next Steps
+          1. Review the Terraform plan output
+          2. Verify resource changes align with expectations
+          3. Approve and merge to trigger deployment
+          
+          > Note: Please ensure all security and compliance requirements are met before merging.
         branch: development
         base: main
-        labels: terraform
-        draft: false 
+        labels: |
+          terraform
+          infrastructure
+          automated
+        reviewers: ${{ github.repository_owner }}
+        draft: false
+        delete-branch: false 
