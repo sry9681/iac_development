@@ -16,7 +16,7 @@ resource "aws_s3_bucket" "test_bucket" {
 }
 
 resource "random_string" "bucket_suffix" {
-  length  = 8
+  length  = 9
   special = false
   upper   = false
-} 
+}
