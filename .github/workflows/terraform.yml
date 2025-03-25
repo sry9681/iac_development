@@ -1,0 +1,68 @@
+name: 'Terraform Deployment'
+
+on:
+  repository_dispatch:
+    types:
+      - terraform-deploy
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    name: 'Terraform'
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: ./
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: "1.5.0"
+        
+    - name: Terraform Format
+      id: fmt
+      run: terraform fmt -check
+      continue-on-error: true
+      
+    - name: Terraform Init
+      id: init
+      run: terraform init
+      
+    - name: Terraform Validate
+      id: validate
+      run: terraform validate
+      
+    - name: Trigger HCP Terraform Run
+      if: success()
+      env:
+        TF_TOKEN: ${{ secrets.TF_TOKEN }}
+      run: |
+        curl -X POST \
+          -H "Authorization: Bearer $TF_TOKEN" \
+          -H "Content-Type: application/vnd.api+json" \
+          -d '{
+            "data": {
+              "attributes": {
+                "message": "Triggered via GitHub Actions",
+                "auto-apply": true
+              },
+              "type": "runs",
+              "relationships": {
+                "workspace": {
+                  "data": {
+                    "type": "workspaces",
+                    "id": "'${{ secrets.TF_ORG }}/'${{ secrets.TF_WORKSPACE }}"
+                  }
+                }
+              }
+            }
+          }' \
+          https://app.terraform.io/api/v2/runs 
