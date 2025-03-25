@@ -1,19 +1,23 @@
-name: 'Terraform Deployment'
+name: 'Terraform Validation and PR Creation'
 
 on:
   repository_dispatch:
     types:
       - terraform-deploy
+  push:
+    branches:
+      - development
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
 
 jobs:
-  terraform:
-    name: 'Terraform'
+  validate-and-pr:
+    name: 'Validate and Create PR'
     runs-on: ubuntu-latest
-    environment: production
+    environment: development
     defaults:
       run:
         working-directory: ./
@@ -39,30 +43,22 @@ jobs:
     - name: Terraform Validate
       id: validate
       run: terraform validate
-      
-    - name: Trigger HCP Terraform Run
-      if: success()
-      env:
-        TF_TOKEN: ${{ secrets.TF_TOKEN }}
-      run: |
-        curl -X POST \
-          -H "Authorization: Bearer $TF_TOKEN" \
-          -H "Content-Type: application/vnd.api+json" \
-          -d '{
-            "data": {
-              "attributes": {
-                "message": "Triggered via GitHub Actions",
-                "auto-apply": true
-              },
-              "type": "runs",
-              "relationships": {
-                "workspace": {
-                  "data": {
-                    "type": "workspaces",
-                    "id": "'${{ secrets.TF_ORG }}/'${{ secrets.TF_WORKSPACE }}"
-                  }
-                }
-              }
-            }
-          }' \
-          https://app.terraform.io/api/v2/runs 
+
+    - name: Create Pull Request
+      if: success() && github.ref == 'refs/heads/development'
+      uses: peter-evans/create-pull-request@v6
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: "chore: terraform changes from development"
+        title: "Terraform Changes Ready for Review"
+        body: |
+          This PR contains Terraform changes that have passed validation:
+          - Format check: ${{ steps.fmt.outcome }}
+          - Init: ${{ steps.init.outcome }}
+          - Validate: ${{ steps.validate.outcome }}
+          
+          Please review the changes and merge to trigger HCP Terraform run.
+        branch: development
+        base: main
+        labels: terraform
+        draft: false 
