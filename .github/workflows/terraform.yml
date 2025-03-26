@@ -23,8 +23,11 @@ jobs:
         working-directory: ./
     
     steps:
-    - name: Checkout
+    - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: main
       
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
@@ -45,20 +48,11 @@ jobs:
       run: terraform validate
 
     - name: Create Pull Request
-      if: success() && github.ref == 'refs/heads/development'
-      uses: peter-evans/create-pull-request@v6
+      id: cpr
+      uses: repo-sync/pull-request@v2
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        commit-message: "chore: terraform changes from development"
-        title: "Terraform Changes Ready for Review"
-        body: |
-          This PR contains Terraform changes that have passed validation:
-          - Format check: ${{ steps.fmt.outcome }}
-          - Init: ${{ steps.init.outcome }}
-          - Validate: ${{ steps.validate.outcome }}
-          
-          Please review the changes and merge to trigger HCP Terraform run.
-        branch: development
-        base: main
-        labels: terraform
-        draft: false 
+        destination_branch: "main"
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        pr_title: "Merge development into main"
+        pr_body: "Automated PR to merge recent changes from development into main"
+        pr_label: "automated-pr"
