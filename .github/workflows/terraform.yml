@@ -48,39 +48,11 @@ jobs:
       run: terraform validate
 
     - name: Create Pull Request
-      if: success() && github.ref == 'refs/heads/development'
-      uses: peter-evans/create-pull-request@v7
+      id: cpr
+      uses: repo-sync/pull-request@v2
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        commit-message: "feat: terraform infrastructure changes"
-        title: "Infrastructure: Terraform Changes Ready for Review"
-        body: |
-          ## Terraform Changes Summary
-          
-          This PR contains infrastructure changes that have been validated:
-          
-          ### Validation Results
-          ✨ Format check: ${{ steps.fmt.outcome }}
-          🔄 Init: ${{ steps.init.outcome }}
-          ✅ Validate: ${{ steps.validate.outcome }}
-          
-          ### Changes Include
-          - Infrastructure modifications from development branch
-          - Automated validation checks passed
-          
-          ### Next Steps
-          1. Review the Terraform plan output
-          2. Verify resource changes align with expectations
-          3. Approve and merge to trigger deployment
-          
-          > Note: Please ensure all security and compliance requirements are met before merging.
-        branch: auto-pr-terraform-changes
-        base: main
-        head: development
-        delete-branch: true
-        labels: |
-          terraform
-          infrastructure
-          automated
-        reviewers: ${{ github.repository_owner }}
-        draft: false 
+        destination_branch: "main"
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        pr_title: "Merge development into main"
+        pr_body: "Automated PR to merge recent changes from development into main"
+        pr_label: "automated-pr"
